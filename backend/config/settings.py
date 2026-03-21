@@ -15,7 +15,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -26,7 +25,6 @@ SECRET_KEY = 'django-insecure-zt_34bb^g9rbxh!ws^gh8e=-q(f8dpu6t!hhx2%dfnw!mdtzw#
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -70,7 +68,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
@@ -80,7 +77,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -100,7 +96,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
@@ -112,8 +107,24 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Message broker URL that Celery uses to send and receive tasks.
+# This project uses a local Redis instance as the broker backend.
+
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+
+# Limit accepted task message payload types for safety/consistency.
+
+CELERY_ACCEPT_CONTENT = ['json']
+
+# Serialize task arguments/results as JSON.
+
+CELERY_TASK_SERIALIZER = 'json'
+
+# Set the default primary key type for new models to a big auto-incrementing integer.
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
