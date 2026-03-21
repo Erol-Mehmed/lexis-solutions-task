@@ -2,3 +2,4 @@ django
 djangorestframework
 celery
 redis
+django-cors-headers
