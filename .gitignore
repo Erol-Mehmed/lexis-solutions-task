@@ -15,6 +15,7 @@ env/
 # Django static/media
 staticfiles/
 media/
+backend/media/
 
 # ========================
 # Environment variables

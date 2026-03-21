@@ -128,3 +128,11 @@ CELERY_TASK_SERIALIZER = 'json'
 # Set the default primary key type for new models to a big auto-incrementing integer.
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+import os
+
+# Absolute filesystem path where uploaded media files will be stored.
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Public URL prefix used to access files from MEDIA_ROOT via the browser.
+MEDIA_URL = '/media/'

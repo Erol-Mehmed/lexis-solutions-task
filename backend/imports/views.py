@@ -4,6 +4,7 @@ from rest_framework import status
 
 from .models import ImportJob
 from .serializers import ImportJobSerializer
+from .tasks import process_import_job
 
 
 class ImportJobUploadView(APIView):
@@ -17,6 +18,8 @@ class ImportJobUploadView(APIView):
             )
 
         job = ImportJob.objects.create(file=file)
+
+        process_import_job.delay(job.id)
 
         return Response(
             ImportJobSerializer(job).data,
