@@ -13,7 +13,8 @@ export default function ImportUploader() {
 
     const res = await uploadCSV(file);
     setJobId(res.id);
-    setFile(null); // reset after upload
+
+    setFile(null);
   };
 
   const progress =
@@ -32,9 +33,9 @@ export default function ImportUploader() {
           type="file"
           className="form-control"
           onChange={(e) => {
-            const selectedFile = e.target.files?.[0] ?? null;
-            setFile(selectedFile);
-            setJobId(null);
+            if (!e.target.files || e.target.files.length === 0) return;
+
+            setFile(e.target.files[0]);
           }}
         />
       </div>
@@ -55,17 +56,15 @@ export default function ImportUploader() {
 
       {/* Status */}
       {data && (
-        <div className="mt-4">
+        <div className="shadow-sm border rounded p-3 mt-4">
           <p className="fw-semibold">Status: {data.status}</p>
 
-          {/* Progress container */}
-          <div className="bg-light-subtle shadow-sm border border-gray-200 rounded p-3">
-            {/* Progress text */}
+          {/* Progress */}
+          <div className="bg-light border rounded p-3">
             <p>
               Progress: {data.processed_rows} / {data.total_rows}
             </p>
 
-            {/* Progress bar */}
             <div className="progress mt-3">
               <div
                 className="progress-bar"
@@ -77,7 +76,7 @@ export default function ImportUploader() {
             </div>
           </div>
 
-          {/* Completed summary */}
+          {/* Completed */}
           {data.status === "completed" && (
             <div className="mt-4">
               <p>Total: {data.total_rows}</p>
@@ -86,7 +85,7 @@ export default function ImportUploader() {
             </div>
           )}
 
-          {/* Failed state */}
+          {/* Failed */}
           {data.status === "failed" && (
             <p className="text-danger mt-3">Import failed</p>
           )}

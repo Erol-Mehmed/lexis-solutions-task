@@ -9,7 +9,8 @@ export function useImportStatus(jobId: number | null) {
     jobId ? `http://localhost:8000/api/imports/${jobId}/` : null,
     fetcher,
     {
-      refreshInterval: (data) => (data?.status === "completed" ? 0 : 2000),
+      refreshInterval: 1000,
+      revalidateOnFocus: true,
     },
   );
 
