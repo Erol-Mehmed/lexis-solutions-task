@@ -21,7 +21,6 @@ backend/media/
 # Environment variables
 # ========================
 .env
-.env.*
 
 # ========================
 # Node / React
