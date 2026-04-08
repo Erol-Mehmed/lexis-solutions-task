@@ -11,20 +11,38 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from backend/.env
+load_dotenv(BASE_DIR / '.env')
+
+
+def env_bool(name: str, default: bool = False) -> bool:
+    return os.getenv(name, str(default)).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def env_list(name: str, default: str = '') -> list[str]:
+    raw = os.getenv(name, default)
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-zt_34bb^g9rbxh!ws^gh8e=-q(f8dpu6t!hhx2%dfnw!mdtzw#'
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ImproperlyConfigured('SECRET_KEY is required in environment variables')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool('DEBUG', True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 
 # Application definition
 
@@ -98,11 +116,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# CORS configuration to allow requests from the frontend development server.
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
+# CORS configuration to allow requests from frontend origins.
+CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')
+CORS_ALLOW_CREDENTIALS = env_bool('CORS_ALLOW_CREDENTIALS', True)
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -121,23 +137,16 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 # Message broker URL that Celery uses to send and receive tasks.
-# This project uses a local Redis instance as the broker backend.
-
-CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
 
 # Limit accepted task message payload types for safety/consistency.
-
 CELERY_ACCEPT_CONTENT = ['json']
 
 # Serialize task arguments/results as JSON.
-
 CELERY_TASK_SERIALIZER = 'json'
 
 # Set the default primary key type for new models to a big auto-incrementing integer.
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-import os
 
 # Absolute filesystem path where uploaded media files will be stored.
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
