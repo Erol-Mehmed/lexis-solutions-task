@@ -1,10 +1,65 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from rest_framework.permissions import IsAuthenticated
 
 from .models import ImportJob
 from .serializers import ImportJobSerializer
 from .tasks import process_import_job
+
+
+class RegisterView(APIView):
+    def post(self, request):
+        print("test>>>  ", request.data)
+        
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        if not username or not password:
+            return Response({"error": "Missing fields"}, status=400)
+
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "User already exists"}, status=400)
+
+        user = User.objects.create_user(username=username, password=password)
+
+        return Response({
+            "id": user.id,
+            "username": user.username
+        }, status=201)
+
+
+class LoginView(APIView):
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is None:
+            return Response({"error": "Invalid credentials"}, status=400)
+
+        login(request, user)
+
+        return Response({"message": "Logged in"})
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        logout(request)
+        return Response({"message": "Logged out"})
+
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            "id": request.user.id,
+            "username": request.user.username,
+        })
 
 
 class ImportJobUploadView(APIView):

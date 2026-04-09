@@ -238,6 +238,11 @@ Response:
 
 ---
 
+### CSRF Note
+
+CSRF is handled automatically by the browser in real usage (session + cookies flow).
+When testing with tools like Postman or cURL, you may need to handle CSRF/session details manually.
+
 ## 🧾 Status Flow
 
 - pending → Job created  
