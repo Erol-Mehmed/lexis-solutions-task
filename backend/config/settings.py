@@ -89,20 +89,20 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ✅ CORS + credentials
+# CORS + credentials
 CORS_ALLOWED_ORIGINS = env_list(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:5173'
 )
 CORS_ALLOW_CREDENTIALS = True
 
-# ✅ CSRF for cross-origin requests (required for session auth)
+# CSRF for cross-origin requests (required for session auth)
 CSRF_TRUSTED_ORIGINS = env_list(
     'CSRF_TRUSTED_ORIGINS',
     'http://localhost:5173'
 )
 
-# ✅ Cookies for cross-origin session auth
+# Cookies for cross-origin session auth
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
