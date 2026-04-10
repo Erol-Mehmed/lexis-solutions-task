@@ -4,6 +4,8 @@ from rest_framework import status
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
 from .models import ImportJob
 from .serializers import ImportJobSerializer
@@ -14,18 +16,32 @@ class RegisterView(APIView):
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
+        email = request.data.get("email")
 
-        if not username or not password:
+        if not username or not password or not email:
             return Response({"error": "Missing fields"}, status=400)
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response({"error": "Invalid email format"}, status=400)
 
         if User.objects.filter(username=username).exists():
             return Response({"error": "User already exists"}, status=400)
 
-        user = User.objects.create_user(username=username, password=password)
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "Email already in use"}, status=400)
+
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=email
+        )
 
         return Response({
             "id": user.id,
-            "username": user.username
+            "username": user.username,
+            "email": user.email,
         }, status=201)
 
 

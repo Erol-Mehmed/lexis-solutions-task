@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "../store/auth";
 import { useNavigate, Link } from "react-router-dom";
+import { getErrorMessage } from "../utils/errors.ts";
 
 export default function Register() {
   const register = useAuthStore((s) => s.register);
-
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -18,17 +18,36 @@ export default function Register() {
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Frontend validation
+    if (!username || !email || !password || !confirmPassword) {
+      setError("All fields are required");
+      return;
+    }
+
+    if (!email.includes("@")) {
+      setError("Invalid email");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
       await register(username, email, password);
       setSuccess("User created successfully");
       setError(null);
 
-      setTimeout(() => {
-        navigate("/login");
-      }, 1000);
-    } catch {
-      setError("Register failed");
+      setTimeout(() => navigate("/login"), 1000);
+    } catch (err: unknown) {
       setSuccess(null);
+      setError(getErrorMessage(err, "Register failed"));
     }
   };
 

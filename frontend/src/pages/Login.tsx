@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "../store/auth";
 import { useNavigate, Link } from "react-router-dom";
+import { getErrorMessage } from "../utils/errors.ts";
 
 export default function Login() {
   const login = useAuthStore((s) => s.login);
-
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -15,13 +15,18 @@ export default function Login() {
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Frontend validation
+    if (!username || !password) {
+      setError("All fields are required");
+      return;
+    }
+
     try {
       await login(username, password);
       setError(null);
-
       navigate("/");
-    } catch {
-      setError("Login failed");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Login failed"));
     }
   };
 
