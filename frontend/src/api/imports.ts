@@ -1,5 +1,6 @@
+import { API_BASE_URL } from "../config/env.ts";
+
 export async function uploadCSV(file: File) {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const formData = new FormData();
   formData.append("file", file);
 

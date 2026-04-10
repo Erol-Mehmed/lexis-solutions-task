@@ -12,8 +12,6 @@ from .tasks import process_import_job
 
 class RegisterView(APIView):
     def post(self, request):
-        print("test>>>  ", request.data)
-        
         username = request.data.get("username")
         password = request.data.get("password")
 

@@ -1,39 +1,86 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuthStore } from "../store/auth";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Register() {
   const register = useAuthStore((s) => s.register);
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
-      await register(username, password);
-      alert("User created");
+      await register(username, email, password);
+      setSuccess("User created successfully");
+      setError(null);
 
-      window.location.href = "/login";
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
     } catch {
-      alert("Register failed");
+      setError("Register failed");
+      setSuccess(null);
     }
   };
 
+  useEffect(() => {
+    if (error || success) {
+      const t = setTimeout(() => {
+        setError(null);
+        setSuccess(null);
+      }, 3000);
+
+      return () => clearTimeout(t);
+    }
+  }, [error, success]);
+
   return (
     <form onSubmit={handleSubmit}>
+      <h2>Register</h2>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {success && <p style={{ color: "green" }}>{success}</p>}
+
       <input
         placeholder="username"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
       />
+
+      <input
+        placeholder="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+
       <input
         type="password"
         placeholder="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
+
+      <input
+        type="password"
+        placeholder="confirm password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+      />
+
       <button type="submit">Register</button>
+
+      <p>
+        Already have an account? <Link to="/login">Login</Link>
+      </p>
     </form>
   );
 }
