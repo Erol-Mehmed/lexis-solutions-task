@@ -13,7 +13,6 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -41,33 +40,28 @@ export default function Register() {
 
     try {
       await register(username, email, password);
-      setSuccess("User created successfully");
       setError(null);
-
-      setTimeout(() => navigate("/login"), 1000);
+      navigate("/login")
     } catch (err: unknown) {
-      setSuccess(null);
       setError(getErrorMessage(err, "Register failed"));
     }
   };
 
   useEffect(() => {
-    if (error || success) {
+    if (error) {
       const t = setTimeout(() => {
         setError(null);
-        setSuccess(null);
       }, 3000);
 
       return () => clearTimeout(t);
     }
-  }, [error, success]);
+  }, [error]);
 
   return (
     <form onSubmit={handleSubmit}>
       <h2>Register</h2>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
-      {success && <p style={{ color: "green" }}>{success}</p>}
 
       <input
         placeholder="username"

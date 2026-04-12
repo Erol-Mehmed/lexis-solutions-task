@@ -9,9 +9,16 @@ type User = {
 type AuthState = {
   user: User | null;
   isAuthenticated: boolean;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  isLoading: boolean;
+
+  register: (
+    username: string,
+    email: string,
+    password: string,
+  ) => Promise<void>;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+
   setUser: (user: User | null) => void;
   fetchMe: () => Promise<void>;
 };
@@ -21,6 +28,8 @@ const API = `${API_BASE_URL}/api/auth`;
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
+  isLoading: true,
+
   register: async (username, email, password) => {
     const res = await fetch(`${API}/register/`, {
       method: "POST",
@@ -32,6 +41,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (!res.ok) throw new Error("Register failed");
   },
+
   login: async (username, password) => {
     const res = await fetch(`${API}/login/`, {
       method: "POST",
@@ -46,24 +56,37 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     await useAuthStore.getState().fetchMe();
   },
+
   setUser: (user) =>
     set({
       user,
       isAuthenticated: !!user,
     }),
+
   fetchMe: async () => {
-    const res = await fetch(`${API}/me/`, {
-      credentials: "include",
-    });
+    try {
+      const res = await fetch(`${API}/me/`, {
+        credentials: "include",
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        set({ user: null, isAuthenticated: false });
+        return;
+      }
+
+      const data = await res.json();
+
+      set({
+        user: data,
+        isAuthenticated: true,
+      });
+    } catch {
       set({ user: null, isAuthenticated: false });
-      return;
+    } finally {
+      set({ isLoading: false });
     }
-
-    const data = await res.json();
-    set({ user: data, isAuthenticated: true });
   },
+
   logout: async () => {
     await fetch(`${API}/logout/`, {
       method: "POST",
