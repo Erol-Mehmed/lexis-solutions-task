@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { API_BASE_URL } from "../config/env.ts";
+import { throwIfNotOk } from "../utils/http.ts";
 
 type User = {
   id: number;
@@ -39,7 +40,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       body: JSON.stringify({ username, email, password }),
     });
 
-    if (!res.ok) throw new Error("Register failed");
+    await throwIfNotOk(res, "Register failed");
   },
 
   login: async (username, password) => {
@@ -52,8 +53,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       body: JSON.stringify({ username, password }),
     });
 
-    if (!res.ok) throw new Error("Login failed");
-
+    await throwIfNotOk(res, "Login failed");
     await useAuthStore.getState().fetchMe();
   },
 

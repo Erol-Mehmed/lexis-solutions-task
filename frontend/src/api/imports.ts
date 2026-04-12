@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "../config/env.ts";
+import { throwIfNotOk } from "../utils/http.ts";
 
 export async function uploadCSV(file: File) {
   const formData = new FormData();
@@ -9,9 +10,7 @@ export async function uploadCSV(file: File) {
     body: formData,
   });
 
-  if (!res.ok) {
-    throw new Error("Upload failed");
-  }
+  await throwIfNotOk(res, "Upload failed");
 
   return res.json();
 }
