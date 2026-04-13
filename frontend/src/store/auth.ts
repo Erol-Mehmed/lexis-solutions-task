@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { API_BASE_URL } from "../config/env.ts";
-import { throwIfNotOk } from "../utils/http.ts";
+import { api, clearTokens, getRefreshToken, setTokens } from "../api/client.ts";
 
 type User = {
   id: number;
@@ -11,7 +10,6 @@ type AuthState = {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-
   register: (
     username: string,
     email: string,
@@ -19,12 +17,9 @@ type AuthState = {
   ) => Promise<void>;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-
   setUser: (user: User | null) => void;
   fetchMe: () => Promise<void>;
 };
-
-const API = `${API_BASE_URL}/api/auth`;
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -32,28 +27,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
 
   register: async (username, email, password) => {
-    const res = await fetch(`${API}/register/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, email, password }),
-    });
-
-    await throwIfNotOk(res, "Register failed");
+    await api.post("/api/auth/register/", { username, email, password });
   },
 
   login: async (username, password) => {
-    const res = await fetch(`${API}/login/`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, password }),
-    });
-
-    await throwIfNotOk(res, "Login failed");
+    const res = await api.post("/api/auth/token/", { username, password });
+    setTokens(res.data.access, res.data.refresh);
     await useAuthStore.getState().fetchMe();
   },
 
@@ -65,22 +44,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   fetchMe: async () => {
     try {
-      const res = await fetch(`${API}/me/`, {
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        set({ user: null, isAuthenticated: false });
-        return;
-      }
-
-      const data = await res.json();
-
+      const res = await api.get("/api/auth/me/");
       set({
-        user: data,
+        user: res.data,
         isAuthenticated: true,
       });
     } catch {
+      clearTokens();
       set({ user: null, isAuthenticated: false });
     } finally {
       set({ isLoading: false });
@@ -88,11 +58,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    await fetch(`${API}/logout/`, {
-      method: "POST",
-      credentials: "include",
-    });
+    const refresh = getRefreshToken();
+    if (refresh) {
+      try {
+        await api.post("/api/auth/logout/", { refresh });
+      } catch {
+        // Ignore logout API errors; client cleanup still happens.
+      }
+    }
 
+    clearTokens();
     set({ user: null, isAuthenticated: false });
   },
 }));

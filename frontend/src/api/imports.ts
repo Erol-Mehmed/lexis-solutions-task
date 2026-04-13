@@ -1,16 +1,9 @@
-import { API_BASE_URL } from "../config/env.ts";
-import { throwIfNotOk } from "../utils/http.ts";
+import { api } from "./client.ts";
 
 export async function uploadCSV(file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_BASE_URL}/api/imports/upload/`, {
-    method: "POST",
-    body: formData,
-  });
-
-  await throwIfNotOk(res, "Upload failed");
-
-  return res.json();
+  const res = await api.post("/api/imports/upload/", formData);
+  return res.data;
 }

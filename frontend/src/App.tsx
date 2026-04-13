@@ -2,8 +2,8 @@ import Header from "./components/layout/Header";
 import Container from "./components/layout/Container";
 import Footer from "./components/layout/Footer";
 import ImportUploader from "./components/ImportUploader";
-import Login from "./pages/login/Login.tsx";
-import Register from "./pages/register/Register.tsx";
+import Login from "./pages/Login.tsx";
+import Register from "./pages/Register.tsx";
 
 import { useEffect } from "react";
 import { useAuthStore } from "./store/auth";

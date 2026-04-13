@@ -1,11 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 from .models import ImportJob
 from .serializers import ImportJobSerializer
@@ -45,24 +45,21 @@ class RegisterView(APIView):
         }, status=201)
 
 
-class LoginView(APIView):
-    def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-
-        user = authenticate(request, username=username, password=password)
-
-        if user is None:
-            return Response({"error": "Invalid credentials"}, status=400)
-
-        login(request, user)
-
-        return Response({"message": "Logged in"})
-
-
 class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        logout(request)
+        refresh = request.data.get("refresh")
+
+        if not refresh:
+            return Response({"error": "Refresh token is required"}, status=400)
+
+        try:
+            token = RefreshToken(refresh)
+            token.blacklist()
+        except TokenError:
+            return Response({"error": "Invalid or expired refresh token"}, status=400)
+
         return Response({"message": "Logged out"})
 
 
@@ -77,8 +74,10 @@ class MeView(APIView):
 
 
 class ImportJobUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        file = request.FILES.get('file')
+        file = request.FILES.get("file")
 
         if not file:
             return Response(
@@ -97,6 +96,8 @@ class ImportJobUploadView(APIView):
 
 
 class ImportJobStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, job_id):
         try:
             job = ImportJob.objects.get(id=job_id)

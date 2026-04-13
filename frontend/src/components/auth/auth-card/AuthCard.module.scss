@@ -8,6 +8,7 @@
     rgba(170, 59, 255, 0.08) 0%,
     rgba(170, 59, 255, 0.02) 100%
   );
+  border-radius: 1rem;
 }
 
 .card {
@@ -44,7 +45,12 @@
   font-size: 0.9rem;
 }
 
-.input {
+.fields {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.fields input {
   height: 2.625rem;
   border-radius: 0.5rem;
   border: 1px solid var(--border);
@@ -53,11 +59,11 @@
   outline: none;
   background: var(--bg);
   color: var(--text-h);
+}
 
-  &:focus {
-    border-color: var(--accent-border);
-    box-shadow: 0 0 0 0.2rem var(--accent-bg);
-  }
+.fields input:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 0.2rem var(--accent-bg);
 }
 
 .button {
@@ -71,14 +77,14 @@
   transition:
     filter 0.2s ease,
     transform 0.05s ease;
+}
 
-  &:hover {
-    filter: brightness(1.05);
-  }
+.button:hover {
+  filter: brightness(1.05);
+}
 
-  &:active {
-    transform: translateY(1px);
-  }
+.button:active {
+  transform: translateY(1px);
 }
 
 .footerText {
