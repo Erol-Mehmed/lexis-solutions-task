@@ -45,8 +45,18 @@ function App() {
                     )
                   }
                 />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                <Route
+                  path="/login"
+                  element={
+                    isAuthenticated ? <Navigate to="/" replace /> : <Login />
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    isAuthenticated ? <Navigate to="/" replace /> : <Register />
+                  }
+                />
               </Routes>
             )}
           </main>
