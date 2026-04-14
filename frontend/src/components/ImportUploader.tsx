@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { useImportStatus } from "../hooks/useImportStatus";
 import { uploadCSV } from "../api/imports";
 
@@ -6,17 +6,56 @@ export default function ImportUploader() {
   const [jobId, setJobId] = useState<number | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [displayFileName, setDisplayFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { data, isLoading, error } = useImportStatus(jobId);
 
+  const isCsvByName = (name: string) => name.toLowerCase().endsWith(".csv");
+
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const selected = e.target.files[0];
+    const isCSV = isCsvByName(selected.name);
+
+    if (!isCSV) {
+      setFileError("Only .csv files are allowed.");
+      setUploadError(null);
+      setFile(null);
+      setDisplayFileName(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setFileError(null);
+    setUploadError(null);
+    setJobId(null); // clear previous job status so retry starts fresh
+    setFile(selected);
+    setDisplayFileName(selected.name);
+  };
+
   const handleUpload = async () => {
     if (!file) return;
-    if (!file.name.endsWith(".csv") && file.type !== "text/csv") return;
+    if (!isCsvByName(file.name)) return;
 
-    const res = await uploadCSV(file);
-    setJobId(res.id);
+    setUploadError(null);
+    setIsUploading(true);
 
-    setFile(null);
+    try {
+      const res = await uploadCSV(file);
+      setJobId(res.id);
+
+      // Keep shown filename, but clear input value so the same file can be selected again.
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const progress =
@@ -32,38 +71,32 @@ export default function ImportUploader() {
       {/* Upload */}
       <div className="mb-3">
         <input
+          ref={fileInputRef}
           type="file"
           className="form-control"
           accept=".csv,text/csv"
-          onChange={(e) => {
-            if (!e.target.files || e.target.files.length === 0) return;
-
-            const selected = e.target.files[0];
-            const isCSV =
-              selected.name.endsWith(".csv") || selected.type === "text/csv";
-
-            if (!isCSV) {
-              setFileError("Only .csv files are allowed.");
-              setFile(null);
-              return;
-            }
-
-            setFileError(null);
-            setFile(selected);
-          }}
+          onChange={onFileChange}
         />
         {fileError && <p className="text-danger mt-1">{fileError}</p>}
+        {uploadError && <p className="text-danger mt-1">{uploadError}</p>}
       </div>
 
-      <button
-        onClick={handleUpload}
-        disabled={!file || isProcessing}
-        className="btn btn-primary"
-      >
-        Upload CSV
-      </button>
+      <div className="d-flex justify-content-between">
+        <button
+          onClick={handleUpload}
+          disabled={!file || isUploading || isProcessing}
+          className="btn btn-primary"
+        >
+          {isUploading ? "Uploading..." : "Upload CSV"}
+        </button>
 
-      {/* Loading spinner */}
+        {displayFileName && (
+          <p className="text-muted mt-2 mb-0">
+            Uploaded file: {displayFileName}
+          </p>
+        )}
+      </div>
+
       {isLoading && <div className="mt-3 spinner-border" role="status" />}
 
       {/* Error */}
@@ -71,10 +104,9 @@ export default function ImportUploader() {
 
       {/* Status */}
       {data && (
-        <div className="shadow-sm border rounded p-3 mt-4">
+        <div className="shadow-sm border rounded p-3 mt-5">
           <p className="fw-semibold">Status: {data.status}</p>
 
-          {/* Progress */}
           <div className="bg-light border rounded p-3">
             <p>
               Progress: {data.processed_rows} / {data.total_rows}
@@ -91,7 +123,6 @@ export default function ImportUploader() {
             </div>
           </div>
 
-          {/* Completed */}
           {data.status === "completed" && (
             <div className="mt-4">
               <p>Total: {data.total_rows}</p>
@@ -100,9 +131,10 @@ export default function ImportUploader() {
             </div>
           )}
 
-          {/* Failed */}
           {data.status === "failed" && (
-            <p className="text-danger mt-3">Import failed</p>
+            <p className="text-danger mt-3">
+              {data.error_message || "Import failed"}
+            </p>
           )}
         </div>
       )}
