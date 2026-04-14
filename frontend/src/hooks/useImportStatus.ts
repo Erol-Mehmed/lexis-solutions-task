@@ -17,7 +17,7 @@ export function useImportStatus(jobId: number | null) {
         if (data.status === "completed" || data.status === "failed") return 0;
         return 1000;
       },
-      revalidateOnFocus: true,
+      revalidateOnFocus: false,
     },
   );
 

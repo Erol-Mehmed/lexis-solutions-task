@@ -5,11 +5,13 @@ import { uploadCSV } from "../api/imports";
 export default function ImportUploader() {
   const [jobId, setJobId] = useState<number | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const { data, isLoading, error } = useImportStatus(jobId);
 
   const handleUpload = async () => {
     if (!file) return;
+    if (!file.name.endsWith(".csv") && file.type !== "text/csv") return;
 
     const res = await uploadCSV(file);
     setJobId(res.id);
@@ -32,12 +34,25 @@ export default function ImportUploader() {
         <input
           type="file"
           className="form-control"
+          accept=".csv,text/csv"
           onChange={(e) => {
             if (!e.target.files || e.target.files.length === 0) return;
 
-            setFile(e.target.files[0]);
+            const selected = e.target.files[0];
+            const isCSV =
+              selected.name.endsWith(".csv") || selected.type === "text/csv";
+
+            if (!isCSV) {
+              setFileError("Only .csv files are allowed.");
+              setFile(null);
+              return;
+            }
+
+            setFileError(null);
+            setFile(selected);
           }}
         />
+        {fileError && <p className="text-danger mt-1">{fileError}</p>}
       </div>
 
       <button

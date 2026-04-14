@@ -271,6 +271,14 @@ When testing with tools like Postman or cURL, you may need to handle CSRF/sessio
 
 ---
 
+## Known Limitation
+
+The progress bar may jump from 0% to 100% for small or fast-processing files.
+This is due to batching in the backend, where progress is updated every N rows instead of after each processed row. This approach reduces the number of database writes and improves performance.
+For real-time granular updates, a streaming mechanism (e.g. WebSockets) would be required instead of polling.
+
+---
+
 ## ⏱️ Time Spent
 
 ~20–25 hours total  

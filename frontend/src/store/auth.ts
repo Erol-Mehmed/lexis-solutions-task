@@ -1,5 +1,11 @@
 import { create } from "zustand";
-import { api, clearTokens, getRefreshToken, setTokens } from "../api/client.ts";
+import {
+  api,
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+} from "../api/client.ts";
 
 type User = {
   id: number;
@@ -43,6 +49,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     }),
 
   fetchMe: async () => {
+    const access = getAccessToken();
+
+    // No access token means unauthenticated state; skip /me request to avoid expected 401s.
+    if (!access) {
+      clearTokens();
+      set({ user: null, isAuthenticated: false, isLoading: false });
+      return;
+    }
+
     try {
       const res = await api.get("/api/auth/me/");
       set({
