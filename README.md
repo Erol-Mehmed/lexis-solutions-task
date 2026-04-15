@@ -1,293 +1,232 @@
-# 📦 CSV Importer (Django + React)
+# CSV Importer
 
-## 📖 Overview
+A full-stack CSV import app with asynchronous processing, JWT authentication, and progress tracking.
 
-This project is a full-stack application that allows users to upload CSV files and process them asynchronously using a backend worker. It demonstrates file upload handling, background processing, progress tracking, and frontend polling.
-
-The system consists of:
-
-- **Backend:** Django + Django REST Framework + Celery + Redis  
-- **Frontend:** React (Vite) + TypeScript  
-- **Database:** SQLite
-- **Task Queue:** Celery with Redis as broker  
-
----
-
-## 🚀 Features
+## Stack
 
 ### Backend
-- Upload CSV files via REST API  
-- Asynchronous processing using Celery  
-- Progress tracking (processed rows vs total rows)  
-- Job status tracking:
-  - pending
-  - processing
-  - completed
-  - failed  
-- Basic CSV validation  
-- Automated backend tests  
+
+- Django
+- Django REST Framework
+- SimpleJWT
+- Celery
+- Redis
+- SQLite (for this task setup)
 
 ### Frontend
-- File upload interface  
-- Upload progress tracking UI  
-- Polling backend for job status (SWR)  
-- Dynamic progress bar updates  
-- Displays:
-  - Total rows  
-  - Processed rows  
-  - Success / failed counts  
-  - Job status  
+
+- React (Vite)
+- TypeScript
+- SWR
+- Axios
+- Zustand
+- Bootstrap
 
 ---
 
-## 📂 CSV Format
+## Features
 
-The uploaded CSV file must include at least:
+### Backend
 
-name,email
+- User registration and JWT authentication
+- Protected endpoints for upload and status
+- CSV upload and async processing with Celery
+- Job statuses:
+    - `pending`
+    - `processing`
+    - `completed`
+    - `failed`
+- File extension validation (`.csv`)
+- Transaction handling:
+    - `transaction.on_commit(...)` for dispatching Celery task
+    - atomic status updates in task
+- Backend tests for auth and import flow
 
-Additional columns are allowed and will be ignored or processed depending on implementation.
+### Frontend
 
-### Example:
+- Login / register flows
+- CSV upload screen with validation
+- Polling via SWR for import status
+- Progress bar + row counters + final status
+- Error messaging for upload/auth failures
 
-name,email,age
-John Doe,john@example.com,30
+---
+
+## Project structure
+
+lexis-solutions-task/  
+backend/  
+frontend/  
+docker-compose.yml  
+README.md
+
+---
+
+## Environment variables
+
+### Backend (`backend/.env`)
+
+Required:
+
+Create a `backend/.env` file before running the backend locally or with Docker.
+
+- `SECRET_KEY=...`
+
+Optional:
+
+- `DEBUG=true`
+- `ALLOWED_HOSTS=localhost,127.0.0.1`
+- `CORS_ALLOWED_ORIGINS=http://localhost:5173`
+- `CELERY_BROKER_URL=redis://redis:6379/0`
+
+### Frontend (`frontend/.env`)
+
+Required:
+
+Create a `frontend/.env` file before running the frontend locally or with Docker.
+
+- `VITE_API_BASE_URL=http://localhost:8000`
+
+---
+
+## Run locally (without Docker)
+
+### 1) Backend API
+
+cd backend  
+python -m venv .venv  
+source .venv/bin/activate  
+pip install -r requirements.txt  
+python manage.py migrate  
+python manage.py runserver
+
+### 2) Redis
+
+redis-server
+
+### 3) Celery worker
+
+cd backend  
+source .venv/bin/activate  
+celery -A config worker -l info
+
+### 4) Frontend
+
+cd frontend  
+npm install  
+npm run dev
+
+Frontend: `http://localhost:5173`  
+Backend: `http://localhost:8000`
+
+---
+
+## Run with Docker
+
+Make sure `backend/.env` and `frontend/.env` are present before starting the containers.
+
+From project root:
+
+docker-compose up --build
+
+Detached mode:
+
+docker-compose up -d
+
+Stop:
+
+docker-compose down
+
+Run migrations in container:
+
+docker-compose exec backend python manage.py migrate
+
+Run tests in container:
+
+docker-compose exec backend python manage.py test
+
+---
+
+## API endpoints
+
+### Auth
+
+- `POST /api/auth/register/`
+- `POST /api/auth/token/`
+- `POST /api/auth/token/refresh/`
+- `POST /api/auth/logout/` (auth required)
+- `GET /api/auth/me/` (auth required)
+
+### Imports (auth required)
+
+- `POST /api/imports/upload/`
+- `GET /api/imports/<job_id>/`
+
+---
+
+## CSV requirements
+
+- File extension must be `.csv`
+- Required headers: `name`, `email`
+- Additional columns are allowed
+
+Example:
+
+name,email,age  
+John Doe,john@example.com,30  
 Jane Doe,jane@example.com,25
 
 ---
 
-## ⚙️ Backend Setup
+## Status flow
 
-### 1. Clone repository
+- `pending`: job created
+- `processing`: worker is processing rows
+- `completed`: processing finished
+- `failed`: job-level error (e.g. empty CSV, invalid structure)
 
-git clone <repo-url>  
+Note: invalid rows increase `failed_rows`, but do not necessarily fail the whole job.
+
+---
+
+## Testing
+
+Run all backend tests:
+
 cd backend  
-
-### 2. Create virtual environment
-
-python -m venv .venv  
 source .venv/bin/activate  
+python manage.py test
 
-### 3. Install dependencies
+The current backend tests cover:
 
-pip install -r requirements.txt  
+- authentication required for upload/status endpoints
+- successful CSV upload flow
+- missing file rejection
+- non-CSV file rejection
+- valid CSV processing
+- invalid row handling
 
-### 4. Run migrations
+Run import tests only:
 
-python manage.py migrate  
-
-### 5. Create superuser
-
-python manage.py createsuperuser  
-
-### 6. Run server
-
-python manage.py runserver  
+python manage.py test imports.tests -v 2
 
 ---
 
-## ⚡ Celery + Redis Setup
+## Known limitation
 
-Start Redis:
-
-redis-server  
-
-Start Celery worker:
-
-celery -A config worker -l info  
+For small or very fast files, the progress bar can jump from `0%` to `100%`.  
+This is expected with polling + batched progress updates in the backend.
 
 ---
 
-## 🧪 Running Tests
+## Notes
 
-python manage.py test  
-
-Tests cover:
-
-- Import job creation  
-- Valid CSV processing  
-- Invalid CSV handling  
-- Upload endpoint behavior  
+- SQLite is used for simplicity in this assignment setup.
+- The app currently focuses on core import functionality and authentication guard.
+- Further hardening (e.g. stricter content validation, per-user job ownership checks) can be added later.
 
 ---
 
-## 🎨 Frontend Setup
+## Author
 
-### 1. Navigate to frontend
-
-cd frontend  
-
-### 2. Install dependencies
-
-npm install  
-
-### 3. Run development server
-
-npm run dev  
-
-Frontend runs at:  
-http://localhost:5173  
-
-Backend runs at:  
-http://localhost:8000  
-
----
-
-## 🐳 Docker Setup
-
-This project can be run using Docker and Docker Compose.
-
-### Prerequisites
-
-- Docker installed
-- Docker Compose installed
-
-### Build and run the application
-
-docker-compose up --build
-
-This will start:
-
-- Django backend
-- React frontend
-- Redis (for Celery broker)
-- Celery worker
-
----
-
-### Run in detached mode
-
-docker-compose up -d
-
----
-
-### Stop containers
-
-docker-compose down
-
----
-
-### Backend migrations (if needed)
-
-docker-compose exec backend python manage.py migrate
-
----
-
-### Create superuser (optional)
-
-docker-compose exec backend python manage.py createsuperuser
-
----
-
-### Access the application
-
-- Frontend: http://localhost:5173  
-- Backend API: http://localhost:8000  
-- Django Admin: http://localhost:8000/admin  
-
----
-
-### Notes
-
-- Ensure ports 5173 and 8000 are not in use
-- Celery worker runs automatically via Docker Compose
-- Redis is used as the message broker for background tasks
-
----
-
-## 🔁 How It Works
-
-1. User selects a CSV file in the frontend  
-2. File is uploaded to the backend via API  
-3. Backend creates an ImportJob  
-4. Celery processes the file asynchronously  
-5. Backend updates progress (processed rows)  
-6. Frontend polls job status via SWR  
-7. UI updates progress bar and results in real-time  
-
----
-
-## 🧱 API Endpoints
-
-### Upload CSV
-
-POST /api/imports/upload/
-
-Response:
-
-{
-  "id": 1
-}
-
----
-
-### Get Import Status
-
-GET /api/imports/<job_id>/
-
-Response:
-
-{
-  "id": 1,
-  "status": "processing",
-  "processed_rows": 5,
-  "total_rows": 10,
-  "success_rows": 5,
-  "failed_rows": 0
-}
-
----
-
-### CSRF Note
-
-CSRF is handled automatically by the browser in real usage (session + cookies flow).
-When testing with tools like Postman or cURL, you may need to handle CSRF/session details manually.
-
-## 🧾 Status Flow
-
-- pending → Job created  
-- processing → Celery is working  
-- completed → Finished successfully  
-- failed → Error occurred  
-
----
-
-## 📌 Assumptions
-
-- Authentication was intentionally not implemented as it is marked optional in the requirements and I wanted to focus on core functionality and background processing.
-- CSV files are expected to follow a basic structure with headers  
-- Redis and Celery are running locally for background processing  
-- The frontend and backend run on separate local ports (5173 and 8000)  
-
----
-
-## 🚀 What I Would Improve With More Time
-
-- Add authentication (JWT or session-based)  
-- Improve CSV validation and error reporting  
-- Add retry mechanisms for failed Celery tasks  
-- Improve UI/UX and loading states  
-- Add more comprehensive test coverage  
-
----
-
-## Known Limitation
-
-The progress bar may jump from 0% to 100% for small or fast-processing files.
-This is due to batching in the backend, where progress is updated every N rows instead of after each processed row. This approach reduces the number of database writes and improves performance.
-For real-time granular updates, a streaming mechanism (e.g. WebSockets) would be required instead of polling.
-
----
-
-## ⏱️ Time Spent
-
-~20–25 hours total  
-- Backend: ~12–15 hours  
-- Frontend: ~8–10 hours  
-- Debugging & integration: ~3–5 hours  
-
----
-
-## 👤 Author
-
-Your Name: Erol Mehmed
+Erol Mehmed
