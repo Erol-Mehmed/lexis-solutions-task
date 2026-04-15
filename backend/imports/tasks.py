@@ -1,6 +1,6 @@
 import csv
 from celery import shared_task
-from .models import ImportJob
+from .models import ImportJob, ImportJobStatus
 
 
 @shared_task
@@ -8,7 +8,7 @@ def process_import_job(job_id):
     job = ImportJob.objects.get(id=job_id)
 
     try:
-        job.status = 'processing'
+        job.status = ImportJobStatus.PROCESSING
         job.save()
 
         file_path = job.file.path
@@ -51,11 +51,11 @@ def process_import_job(job_id):
                 if processed % 5 == 0 or processed == total:
                     job.save()
 
-        job.status = 'completed'
+        job.status = ImportJobStatus.COMPLETED
         job.save()
 
     except Exception as e:
-        job.status = 'failed'
+        job.status = ImportJobStatus.FAILED
         job.error_message = str(e)
         job.save()
         raise e

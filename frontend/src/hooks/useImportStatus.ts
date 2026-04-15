@@ -5,6 +5,7 @@ import { api } from "../api/client.ts";
 export function useImportStatus(jobId: number | null) {
   const fetcher = async (url: string): Promise<ImportJob> => {
     const res = await api.get<ImportJob>(url);
+
     return res.data;
   };
 
