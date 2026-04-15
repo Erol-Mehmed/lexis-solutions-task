@@ -72,11 +72,12 @@ class ImportJobTest(APITestCase):
             ["John", "john@example.com", 30]
         ])
 
-        response = self.client.post(
-            reverse("import-upload"),
-            {"file": csv_file},
-            format="multipart",
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("import-upload"),
+                {"file": csv_file},
+                format="multipart",
+            )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("id", response.json())
@@ -164,3 +165,21 @@ class ImportJobTest(APITestCase):
         self.assertEqual(job.processed_rows, 1)
         self.assertEqual(job.success_rows, 0)
         self.assertEqual(job.failed_rows, 1)
+
+    def test_upload_non_csv_file_returns_400(self):
+        self.authenticate()
+
+        txt_file = SimpleUploadedFile(
+            "data.txt",
+            b"name,email\nJohn,john@example.com",
+            content_type="text/plain",
+        )
+
+        response = self.client.post(
+            reverse("import-upload"),
+            {"file": txt_file},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json()["error"], "Only .csv files are allowed")

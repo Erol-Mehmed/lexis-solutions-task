@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -85,9 +86,15 @@ class ImportJobUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        if not file.name.lower().endswith(".csv"):
+            return Response(
+                {"error": "Only .csv files are allowed"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         job = ImportJob.objects.create(file=file)
 
-        process_import_job.delay(job.id)
+        transaction.on_commit(lambda: process_import_job.delay(job.id))
 
         return Response(
             ImportJobSerializer(job).data,
